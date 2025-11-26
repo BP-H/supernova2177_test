@@ -54,3 +54,12 @@ docker compose down
 - For production, adjust the environment variables as needed.
 - The backend expects the `DATABASE_URL` environment variable to be provided via docker-compose.
 - The frontend reads the `NEXT_PUBLIC_API_URL` environment variable to connect to the backend.
+
+## Railway deployment
+
+To mirror the existing `Procfile` when deploying to Railway:
+
+- Set the **start command** to `cd super-nova-2177 && uvicorn backend.app:app --host 0.0.0.0 --port $PORT`.
+- Set the **working directory** to `super-nova-2177` so `backend` resolves as a package.
+
+After redeploying with these settings, the logs should show `Loaded application 'backend.app:app'` instead of `/app/app.py`.
