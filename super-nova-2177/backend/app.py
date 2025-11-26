@@ -1,5 +1,6 @@
 import sys
 import os
+import importlib
 import time
 import shutil
 import uuid
@@ -1279,12 +1280,20 @@ def remove_vote(proposal_id: int, voter: str, db: Session = Depends(get_db)):
 
 # --- Register votes_router ---
 
-# Import votes_router with a fallback to support both package and module execution
-try:
-    from backend.votes_router import router as votes_router
-except ImportError:
-    from .votes_router import router as votes_router
-app.include_router(votes_router)
+# Support running as a package (backend.*), as a module from the backend directory,
+# or as a directly executed script by normalizing the import path and handling both
+# import forms.
+if not __package__:
+    module_dir = os.path.dirname(__file__)
+    if module_dir not in sys.path:
+        sys.path.append(module_dir)
+
+votes_router_module = importlib.import_module(
+    "votes_router"
+    if importlib.util.find_spec("votes_router")
+    else "backend.votes_router"
+)
+app.include_router(votes_router_module.router)
 
 
 if __name__ == "__main__":
