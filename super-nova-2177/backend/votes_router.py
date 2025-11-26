@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from backend.db_utils import get_db, ProposalVote, Harmonizer, SUPER_NOVA_AVAILABLE
+from .db_utils import get_db, ProposalVote, Harmonizer, SUPER_NOVA_AVAILABLE
 
 from pydantic import BaseModel
 
