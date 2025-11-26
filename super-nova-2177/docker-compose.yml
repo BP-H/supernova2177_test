@@ -16,7 +16,7 @@ services:
   supernova_backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile
     container_name: supernova_backend
     command: uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
     volumes:
