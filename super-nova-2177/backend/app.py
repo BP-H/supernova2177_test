@@ -1280,7 +1280,7 @@ def remove_vote(proposal_id: int, voter: str, db: Session = Depends(get_db)):
 # --- Register votes_router ---
 
 # Import votes_router from db_utils to avoid circular import
-from backend.votes_router import router as votes_router
+from .votes_router import router as votes_router
 app.include_router(votes_router)
 
 
