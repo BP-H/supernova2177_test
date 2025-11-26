@@ -5,12 +5,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from backend.db_utils import get_db
-
-try:
-    from supernova_2177_ui_weighted.db_models import ProposalVote
-except ImportError:
-    ProposalVote = None
+from backend.db_utils import get_db, ProposalVote, Harmonizer, SUPER_NOVA_AVAILABLE
 
 from pydantic import BaseModel
 
@@ -30,17 +25,18 @@ def add_vote(v: VoteIn, db: Session = Depends(get_db)):
     logger = logging.getLogger("votes_router")
     logger.info(f"Payload received: {v.dict()}")
     try:
-        from supernova_2177_ui_weighted.db_models import Harmonizer
-
         # Buscar o Harmonizer pelo username
-        harmonizer = db.query(Harmonizer).filter_by(username=v.username).first()
+        harmonizer = db.query(Harmonizer).filter_by(username=v.username).first() if Harmonizer else None
         if harmonizer is None:
-            # Criar harmonizer automaticamente se não existir
-            harmonizer = Harmonizer(username=v.username, email=f"{v.username}@example.com", hashed_password="dummy")
-            db.add(harmonizer)
-            db.commit()
-            db.refresh(harmonizer)
-            logger.info(f"Harmonizer '{v.username}' criado automaticamente.")
+            if not SUPER_NOVA_AVAILABLE and Harmonizer:
+                harmonizer = Harmonizer(username=v.username, email=f"{v.username}@example.com", hashed_password="dummy")
+                db.add(harmonizer)
+                db.commit()
+                db.refresh(harmonizer)
+                logger.info(f"Harmonizer '{v.username}' criado automaticamente.")
+            else:
+                logger.warning("Harmonizer model unavailable; cannot register vote")
+                raise HTTPException(status_code=503, detail="Harmonizer model unavailable")
 
         harmonizer_id = harmonizer.id
 
@@ -87,10 +83,6 @@ def remove_vote(proposal_id: int, username: str, db: Session = Depends(get_db)):
     logger = logging.getLogger("votes_router")
     try:
         # Buscar o Harmonizer pelo username
-        try:
-            from supernova_2177_ui_weighted.db_models import Harmonizer
-        except ImportError:
-            Harmonizer = None
         harmonizer = None
         if Harmonizer:
             harmonizer = db.query(Harmonizer).filter_by(username=username).first()
