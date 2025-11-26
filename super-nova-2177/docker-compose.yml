@@ -14,16 +14,15 @@ services:
       - supernova_db_data:/var/lib/postgresql/data
 
   supernova_backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: supernova_backend
     command: uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - type: bind
         source: ./backend
         target: /app/backend
-      - type: bind
-        source: ./supernova_2177_ui_weighted
-        target: /app/supernova_2177_ui_weighted
     environment:
       DATABASE_URL: postgresql://postgres:example@supernova_db:5432/postgres
     depends_on:

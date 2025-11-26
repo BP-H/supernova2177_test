@@ -14,10 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-COPY . /app/backend
+COPY backend /app/backend
+COPY supernova_2177_ui_weighted /app/supernova_2177_ui_weighted
+
+ENV PYTHONPATH="${PYTHONPATH}:/app/backend:/app/supernova_2177_ui_weighted"
 
 EXPOSE 8000
 
