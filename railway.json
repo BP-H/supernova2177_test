@@ -1,5 +1,8 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "buildCommand": "cd super-nova-2177 && pip install -r backend/requirements.txt"
+  },
   "deploy": {
     "startCommand": "cd super-nova-2177 && uvicorn backend.app:app --host 0.0.0.0 --port $PORT",
     "rootDirectory": "super-nova-2177"
