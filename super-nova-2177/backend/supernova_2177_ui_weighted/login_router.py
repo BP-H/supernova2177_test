@@ -13,14 +13,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from superNova_2177 import (
-    Harmonizer,
-    InvalidConsentError,
-    Token,
-    create_access_token,
-    get_db,
-    verify_password,
-)
+from supernova_2177_ui_weighted import auth_utils
+from supernova_2177_ui_weighted.db_models import Harmonizer
 from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
 from universe_manager import UniverseManager
 
@@ -32,10 +26,12 @@ router = APIRouter()
 @router.post("/token", tags=["Harmonizers"])
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    db: Session = Depends(auth_utils.get_db),
 ):
     user = db.query(Harmonizer).filter(Harmonizer.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not auth_utils.verify_password(
+        form_data.password, user.hashed_password
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -43,7 +39,7 @@ def login_for_access_token(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     if not user.consent_given:
-        raise InvalidConsentError("User has revoked consent.")
+        raise auth_utils.InvalidConsentError("User has revoked consent.")
 
     streaks = user.engagement_streaks or {}
     try:
@@ -61,7 +57,9 @@ def login_for_access_token(
     db.commit()
 
     universe_id = UniverseManager.initialize_for_entity(user.id, user.species)
-    access_token = create_access_token({"sub": user.username, "universe_id": universe_id})
+    access_token = auth_utils.create_access_token(
+        {"sub": user.username, "universe_id": universe_id}
+    )
 
     from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
 
@@ -73,7 +71,7 @@ def login_for_access_token(
 def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    db: Session = Depends(auth_utils.get_db),
 ):
     """Validate credentials and set a signed session cookie."""
     result = login_for_access_token(form_data, db)
