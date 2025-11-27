@@ -44,6 +44,18 @@ This will build and start the services:
 
 The frontend will be available at [http://localhost:3000](http://localhost:3000) and the backend API at [http://localhost:8000](http://localhost:8000).
 
+## Optional backend dependencies
+
+The backend ships with a minimal `requirements.txt` that keeps Railway builds fast. Machine-learning and analysis extras (e.g. PyTorch, SciPy, pandas) now live in `super-nova-2177/backend/requirements-ml.txt`.
+
+- Default deployments (including Docker Compose) only install `requirements.txt`.
+- To enable the optional features locally or in a custom image, install both files:
+
+  ```sh
+  pip install -r super-nova-2177/backend/requirements.txt \
+              -r super-nova-2177/backend/requirements-ml.txt
+  ```
+
 ## Stop the services
 
 ```sh
