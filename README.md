@@ -56,6 +56,11 @@ The backend ships with a minimal `requirements.txt` that keeps Railway builds fa
               -r super-nova-2177/backend/requirements-ml.txt
   ```
 
+## Railway deployment notes
+
+- Railway will default to the Node buildpack because of the monorepo layout. Deployments should instead target the Python backend by either selecting the repository root Dockerfile (which builds from `super-nova-2177/backend`) or setting the service path to `super-nova-2177/backend`.
+- The `Procfile` pins the start command to `uvicorn backend.app:app --host 0.0.0.0 --port ${PORT:-8000}` and ensures `pip install -r super-nova-2177/backend/requirements.txt` runs before boot so requirements are installed even when the backend is not the detected root.
+
 ## Stop the services
 
 ```sh
