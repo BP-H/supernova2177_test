@@ -1,4 +1,3 @@
-import sys
 import os
 import importlib
 import time
@@ -14,78 +13,31 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import or_, desc, asc, func, text
 from sqlalchemy.orm import Session
 
-# Debug info
-print("=== DEBUG INFO ===")
-print(f"Current directory: {os.getcwd()}")
-print(f"Directory contents: {os.listdir('.')}")
+SUPER_NOVA_AVAILABLE = False
 
-possible_paths = [
-    '/app/supernova_2177_ui_weighted',
-    '/supernova_2177_ui_weighted',
-    os.path.join(os.path.dirname(__file__), 'supernova_2177_ui_weighted'),
-    os.path.join(os.path.dirname(__file__), '..', 'supernova_2177_ui_weighted'),
-]
-
-supernova_dir = None
-for path in possible_paths:
-    path = os.path.normpath(path)
-    print(f"Checking path: {path}")
-    if os.path.exists(path) and os.path.isdir(path):
-        supernova_dir = path
-        print(f"✅ Found SuperNova directory at: {path}")
-        print(f"Contents: {os.listdir(path)}")
-        break
-
-if supernova_dir:
-    supernova_file_path = os.path.join(supernova_dir, 'supernova_2177.py')
-    print(f"=== PATH CHECK ===")
-    print(f"supernova_2177.py file path: {supernova_file_path}")
-    print(f"File exists: {os.path.isfile(supernova_file_path)}")
-
-    if os.path.isfile(supernova_file_path):
-        try:
-            with open(supernova_file_path, 'r') as f:
-                first_lines = [next(f) for _ in range(10)]
-            print("First lines of file:")
-            for line in first_lines:
-                print(">", line.rstrip())
-        except Exception as e:
-            print(f"Could not read file: {e}")
-
-if not supernova_dir:
-    print("❌ SuperNova directory not found in any known location")
-    SUPER_NOVA_AVAILABLE = False
-else:
-    # Adicionar ao Python path
-    if supernova_dir not in sys.path:
-        sys.path.insert(0, supernova_dir)
-    
-    try:
-        from supernova_2177_ui_weighted.superNova_2177 import (
-            register_vote, tally_votes, decide as weighted_decide, 
-            get_threshold as get_weighted_threshold, SessionLocal, get_db,
-            get_settings, DB_ENGINE_URL
-        )
-        from supernova_2177_ui_weighted.db_models import (
-            Proposal, ProposalVote, Comment, Decision, Run, Harmonizer, VibeNode, SystemState
-        )
-        SUPER_NOVA_AVAILABLE = True
-        print("✅ SuperNova 2177 integration: ENABLED")
-    except ImportError as e:
-        print(f"❌ SuperNova import failed: {e}")
-        import traceback
-        traceback.print_exc()
-        SUPER_NOVA_AVAILABLE = False
-    except NameError as e:
-        print(f"❌ NameError in SuperNova import (app not defined): {e}")
-        import traceback
-        traceback.print_exc()
-        SUPER_NOVA_AVAILABLE = False
-    except Exception as e:
-        print(f"❌ Unexpected error importing SuperNova: {e}")
-        import traceback
-        traceback.print_exc()
-        SUPER_NOVA_AVAILABLE = False
+try:
+    from supernova_2177_ui_weighted.superNova_2177 import (
+        register_vote, tally_votes, decide as weighted_decide,
+        get_threshold as get_weighted_threshold, SessionLocal, get_db,
+        get_settings, DB_ENGINE_URL
+    )
+    from supernova_2177_ui_weighted.db_models import (
+        Proposal, ProposalVote, Comment, Decision, Run, Harmonizer, VibeNode, SystemState
+    )
+    SUPER_NOVA_AVAILABLE = True
+    print("✅ SuperNova 2177 integration: ENABLED")
+except ImportError as e:
+    print(f"❌ SuperNova import failed: {e}")
+    import traceback
+    traceback.print_exc()
+except NameError as e:
+    print(f"❌ NameError in SuperNova import (app not defined): {e}")
+    import traceback
+    traceback.print_exc()
+except Exception as e:
+    print(f"❌ Unexpected error importing SuperNova: {e}")
+    import traceback
+    traceback.print_exc()
 
 #
 if not SUPER_NOVA_AVAILABLE:

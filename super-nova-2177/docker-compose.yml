@@ -23,6 +23,9 @@ services:
       - type: bind
         source: ./backend
         target: /app/backend
+      - type: bind
+        source: ./supernova_2177_ui_weighted
+        target: /app/supernova_2177_ui_weighted
     environment:
       DATABASE_URL: postgresql://postgres:example@supernova_db:5432/postgres
     depends_on:

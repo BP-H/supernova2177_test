@@ -44,6 +44,8 @@ This will build and start the services:
 
 The frontend will be available at [http://localhost:3000](http://localhost:3000) and the backend API at [http://localhost:8000](http://localhost:8000).
 
+The backend image installs `supernova_2177_ui_weighted` in editable mode at `/app/supernova_2177_ui_weighted`, and Docker Compose bind-mounts the same directory locally. If you install dependencies on your host instead of Docker, run `pip install -r super-nova-2177/backend/requirements.txt` from the `super-nova-2177` folder so the editable dependency resolves to the same path.
+
 ## Stop the services
 
 ```sh
