@@ -21,7 +21,6 @@ from superNova_2177 import (
     get_db,
     verify_password,
 )
-from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
 from universe_manager import UniverseManager
 
 router = APIRouter()
@@ -29,7 +28,7 @@ router = APIRouter()
 
 
 
-@router.post("/token", tags=["Harmonizers"])
+@router.post("/token", tags=["Harmonizers"], response_model=Token)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
@@ -63,10 +62,7 @@ def login_for_access_token(
     universe_id = UniverseManager.initialize_for_entity(user.id, user.species)
     access_token = create_access_token({"sub": user.username, "universe_id": universe_id})
 
-    from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
-
-    # Retornar via Pydantic schema
-    return HarmonizerSchema.from_orm(user)
+    return Token(access_token=access_token, token_type="bearer", universe_id=universe_id)
 
 
 @router.post("/login", tags=["Harmonizers"])
@@ -79,11 +75,16 @@ def login(
     result = login_for_access_token(form_data, db)
     response.set_cookie(
         "session",
-        result["access_token"],
+        result.access_token,
         httponly=True,
         samesite="lax",
     )
-    return {"detail": "login successful", "universe_id": result["universe_id"]}
+    return {
+        "detail": "login successful",
+        "access_token": result.access_token,
+        "token_type": result.token_type,
+        "universe_id": result.universe_id,
+    }
 
 
 @router.post("/logout", tags=["Harmonizers"])

@@ -1,9 +1,8 @@
-import os
 import sys
 import importlib
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 if str(root) not in sys.path:
     sys.path.insert(0, str(root))
 
@@ -11,7 +10,6 @@ from fastapi.testclient import TestClient
 import superNova_2177 as sn
 import db_models
 import login_router
-import uuid
 import pytest
 
 
@@ -23,8 +21,9 @@ def client(tmp_path, monkeypatch):
     db_models.init_db(f"sqlite:///{db_path}")
     monkeypatch.setenv("SECRET_KEY", "testsecret")
     importlib.reload(db_models)
-    importlib.reload(login_router)
     sn_mod = importlib.reload(sn)
+    monkeypatch.setattr(sn_mod, "pwd_context", None)
+    importlib.reload(login_router)
     sn_mod.create_database()
     sn_mod.create_app()
     sn_mod.Base.metadata.drop_all(bind=sn_mod.engine)
@@ -44,7 +43,21 @@ def client(tmp_path, monkeypatch):
 def test_login_success(client):
     resp = client.post("/login", data={"username": "bob", "password": "password"})
     assert resp.status_code == 200
-    assert "session" in resp.cookies
+    payload = resp.json()
+    assert payload["detail"] == "login successful"
+    assert payload["token_type"] == "bearer"
+    assert payload["access_token"]
+    assert payload["universe_id"]
+    assert resp.cookies["session"] == payload["access_token"]
+
+
+def test_token_endpoint_returns_token_structure(client):
+    resp = client.post("/token", data={"username": "bob", "password": "password"})
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["token_type"] == "bearer"
+    assert payload["access_token"]
+    assert payload["universe_id"]
 
 
 def test_login_failure(client):
