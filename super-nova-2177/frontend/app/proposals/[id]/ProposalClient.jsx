@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import ProposalCard from "@/content/proposal/content/ProposalCard";
-import Loading from "@/app/loading";
+import Loading from "@/app/Loading";
 
 export default function ProposalClient({ id }) {
   const [proposal, setProposal] = useState(null);
