@@ -37,4 +37,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Environment variables
 
-When deploying to Vercel, configure `OPENAI_API_KEY` in the **Environment Variables** dashboard so production builds and runtime requests can access the OpenAI API.
+When deploying to Vercel or Netlify, configure `NEXT_PUBLIC_API_URL` so client-side requests reach the correct backend host. If you need the OpenAI integration, also provide `OPENAI_API_KEY` in the platform dashboard so production builds and runtime requests can access the OpenAI API.
