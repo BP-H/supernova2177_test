@@ -11,19 +11,37 @@ import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from supernova_2177_ui_weighted import auth_utils
-from supernova_2177_ui_weighted.db_models import Harmonizer
-from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
-from universe_manager import UniverseManager
+try:  # pragma: no cover - allow usage as standalone module
+    from supernova_2177_ui_weighted import auth_utils
+    from supernova_2177_ui_weighted.db_models import Harmonizer
+    from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
+    from supernova_2177_ui_weighted.universe_manager import UniverseManager
+except ImportError:  # pragma: no cover - fallback for relative imports
+    from . import auth_utils
+    from .db_models import Harmonizer
+    from .harmonizer_schema import HarmonizerSchema
+    from .universe_manager import UniverseManager
 
 router = APIRouter()
 
 
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    universe_id: str | None
+    user: HarmonizerSchema
 
 
-@router.post("/token", tags=["Harmonizers"])
+class LoginResult(LoginResponse):
+    detail: str
+
+
+
+
+@router.post("/token", response_model=LoginResponse, tags=["Harmonizers"])
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(auth_utils.get_db),
@@ -63,11 +81,15 @@ def login_for_access_token(
 
     from supernova_2177_ui_weighted.harmonizer_schema import HarmonizerSchema
 
-    # Retornar via Pydantic schema
-    return HarmonizerSchema.from_orm(user)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "universe_id": universe_id,
+        "user": HarmonizerSchema.from_orm(user),
+    }
 
 
-@router.post("/login", tags=["Harmonizers"])
+@router.post("/login", response_model=LoginResult, tags=["Harmonizers"])
 def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -81,7 +103,7 @@ def login(
         httponly=True,
         samesite="lax",
     )
-    return {"detail": "login successful", "universe_id": result["universe_id"]}
+    return {"detail": "login successful", **result}
 
 
 @router.post("/logout", tags=["Harmonizers"])

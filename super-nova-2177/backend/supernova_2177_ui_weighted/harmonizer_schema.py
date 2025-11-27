@@ -1,5 +1,7 @@
-from pydantic import BaseModel
+import datetime
 from typing import List, Optional
+
+from pydantic import BaseModel
 
 class HarmonizerSchema(BaseModel):
     id: int
@@ -9,7 +11,7 @@ class HarmonizerSchema(BaseModel):
     profile_pic: str
     is_active: bool
     is_admin: bool
-    created_at: str
+    created_at: datetime.datetime | str
     species: str
     harmony_score: str
     creative_spark: str

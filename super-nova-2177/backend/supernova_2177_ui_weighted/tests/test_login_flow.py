@@ -4,8 +4,9 @@ import importlib
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
-if str(root) not in sys.path:
-    sys.path.insert(0, str(root))
+package_root = root.parent
+if str(package_root) not in sys.path:
+    sys.path.insert(0, str(package_root))
 
 from fastapi.testclient import TestClient
 import superNova_2177 as sn
@@ -45,6 +46,21 @@ def test_login_success(client):
     resp = client.post("/login", data={"username": "bob", "password": "password"})
     assert resp.status_code == 200
     assert "session" in resp.cookies
+    payload = resp.json()
+    assert payload["detail"] == "login successful"
+    assert payload["token_type"] == "bearer"
+    assert payload["user"]["username"] == "bob"
+    assert payload["universe_id"]
+
+
+def test_token_includes_user_metadata(client):
+    resp = client.post("/token", data={"username": "bob", "password": "password"})
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["access_token"]
+    assert payload["token_type"] == "bearer"
+    assert payload["universe_id"]
+    assert payload["user"]["username"] == "bob"
 
 
 def test_login_failure(client):

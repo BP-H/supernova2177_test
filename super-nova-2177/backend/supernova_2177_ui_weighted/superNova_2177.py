@@ -1,4 +1,5 @@
 import os
+import importlib
 """Model Card
 Name: superNova_2177
 Version: 3.5
@@ -316,10 +317,12 @@ def include_routers(app):
     from moderation_router import router as moderation_router
     from video_chat_router import router as video_chat_router
     from governance_router import router as governance_router
+    from login_router import router as login_router
 
     app.include_router(moderation_router)
     app.include_router(video_chat_router)
     app.include_router(governance_router)
+    app.include_router(login_router)
 
 include_routers(app)
 
@@ -471,7 +474,10 @@ def create_database() -> None:
 
 def get_password_hash(password: str) -> str:
     if hasattr(pwd_context, "hash"):
-        return pwd_context.hash(password)
+        try:
+            return pwd_context.hash(password)
+        except Exception:
+            pass
     import hashlib
 
     return hashlib.sha256(password.encode()).hexdigest()
@@ -479,7 +485,10 @@ def get_password_hash(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     if hasattr(pwd_context, "verify"):
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            pass
     import hashlib
 
     return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password

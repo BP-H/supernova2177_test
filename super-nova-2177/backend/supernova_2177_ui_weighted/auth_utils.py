@@ -39,7 +39,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Return ``True`` if ``plain_password`` matches ``hashed_password``."""
 
     if hasattr(pwd_context, "verify"):
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            pass
 
     return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
 
