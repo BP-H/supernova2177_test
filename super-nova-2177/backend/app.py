@@ -1275,11 +1275,14 @@ def remove_vote(proposal_id: int, voter: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Failed to remove vote: {str(e)}")
 
 
-# --- Register votes_router ---
+# --- Register routers ---
 
-# Import votes_router from backend.votes_router
+# Import routers from backend package
 from backend.votes_router import router as votes_router
+from supernova_2177_ui_weighted.login_router import router as login_router
+
 app.include_router(votes_router)
+app.include_router(login_router)
 
 
 if __name__ == "__main__":

@@ -497,17 +497,6 @@ def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-# Scientific and Artistic Libraries from all files
-import importlib
-
-try:
-    login_router_module = importlib.import_module("supernova_2177_ui_weighted.login_router")
-    app.include_router(login_router_module.router)
-    print("✅ Login router carregado com sucesso")
-except Exception as e:
-    print(f"⚠️ Erro ao carregar login_router: {e}")
-
-
 def _safe_import(
     module_name: str, alias: Optional[str] = None, attrs: Optional[list] = None
 ) -> None:
