@@ -19,15 +19,17 @@
    NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
 
-2. **Configure the frontend `.env` file:**
+   Docker Compose will inject `NEXT_PUBLIC_API_URL` into the frontend container (defaulting to `http://localhost:8000` if unset) so the Next.js app can reach the API during local development.
 
-   The file `super-nova-2177/frontend/.env` should already contain:
+2. **Configure the frontend `.env.local` file:**
+
+   The file `super-nova-2177/frontend/.env.local` contains the default backend host for local runs:
 
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
 
-   Adjust if needed to reflect the backend address in production.
+   Override this value for production, and remember to configure `NEXT_PUBLIC_API_URL` in your Vercel/Netlify dashboards so client-side code can call the correct backend host.
 
 ## Start the services
 
