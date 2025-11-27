@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supernova_2177_ui_weighted"
+version = "0.1.0"
+description = "SuperNova 2177 weighted UI package"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "See LICENSE file"}
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["supernova_2177_ui_weighted*"]
