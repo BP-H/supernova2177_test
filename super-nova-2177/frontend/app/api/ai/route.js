@@ -3,20 +3,19 @@ import OpenAI from "openai";
 
 const MISSING_API_KEY_MESSAGE = "Missing OPENAI_API_KEY environment variable.";
 
-function getOpenAiClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(MISSING_API_KEY_MESSAGE);
-  }
-
-  return new OpenAI({ apiKey });
-}
-
 export async function POST(request) {
   try {
     const { prompt } = await request.json();
-    const openai = getOpenAiClient();
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { reply: MISSING_API_KEY_MESSAGE },
+        { status: 503 }
+      );
+    }
+
+    const openai = new OpenAI({ apiKey });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",

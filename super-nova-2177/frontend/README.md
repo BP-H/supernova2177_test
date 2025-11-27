@@ -20,6 +20,10 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment variables
+
+An optional `OPENAI_API_KEY` can be set to enable responses from the `/api/ai` route. When the variable is missing, the endpoint short-circuits and returns a message indicating that the API key is required instead of attempting to reach OpenAI.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
