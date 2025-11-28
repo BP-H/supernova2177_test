@@ -10,7 +10,7 @@ if not os.path.exists(init_file):
     open(init_file, "a").close()
 
 try:
-    from .supernova_2177_ui_weighted.superNova_2177 import (
+    from .supernova_2177_ui_weighted.supernovecore import (
         register_vote, tally_votes, decide, get_threshold, 
         get_settings, DB_ENGINE_URL, SessionLocal, get_db
     )
