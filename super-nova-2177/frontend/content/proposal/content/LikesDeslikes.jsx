@@ -18,49 +18,88 @@ function LikesDeslikes({
   const [dislikes, setDislikes] = useState(initialDislikes);
   const [action, setAction] = useState(false);
   const { userData } = useUser();
+  const backendUrl = userData?.activeBackend || process.env.NEXT_PUBLIC_API_URL;
 
-  async function sendVote(choice) {
+  const voterType = userData?.species?.trim() || "human";
+
+  const validateProfile = () => {
     const errors = [];
-    if (!userData?.name) errors.push("User name is missing.");
-    if (!userData?.species) errors.push("Species is missing.");
+    if (!backendUrl) {
+      errors.push("API base URL is not configured.");
+    }
+    if (!userData?.name) {
+      errors.push("Add a display name in your profile before voting.");
+    }
 
     if (errors.length > 0) {
       setErrorMsg(errors);
       return false;
     }
 
-    await fetch("http://localhost:8000/votes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        proposal_id: proposalId,
-        username: userData.name,
-        choice: choice,
-        voter_type: userData.species || "human",
-      }),
-    });
+    if (!userData?.species) {
+      setErrorMsg([
+        "You haven't selected a species in your profile yet. We'll submit this vote as a human until you update it.",
+      ]);
+    }
+
     return true;
+  };
+
+  async function sendVote(choice) {
+    try {
+      const response = await fetch(`${backendUrl}/votes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          proposal_id: proposalId,
+          username: userData.name,
+          choice: choice,
+          voter_type: voterType,
+        }),
+      });
+
+      if (!response.ok) {
+        setErrorMsg([`Failed to send vote: ${response.statusText}`]);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      setErrorMsg([`Failed to send vote: ${error.message}`]);
+      return false;
+    }
   }
 
   async function removeVote() {
-    await fetch(
-      `http://localhost:8000/votes?proposal_id=${proposalId}&username=${userData.name}`,
-      {
-        method: "DELETE",
+    try {
+      const response = await fetch(
+        `${backendUrl}/votes?proposal_id=${proposalId}&username=${userData.name}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        setErrorMsg([`Failed to remove vote: ${response.statusText}`]);
+        return false;
       }
-    );
+
+      return true;
+    } catch (error) {
+      setErrorMsg([`Failed to remove vote: ${error.message}`]);
+      return false;
+    }
   }
 
   const handleLikeClick = async () => {
-    if (!userData?.name || !userData?.species) {
-      setErrorMsg(["User name or species is missing"]);
-      return;
-    }
+    if (!validateProfile()) return;
 
     if (clicked === "like") {
-      await removeVote();
-      setLikes(likes - 1);
-      setClicked(null);
+      const removed = await removeVote();
+      if (removed) {
+        setLikes(likes - 1);
+        setClicked(null);
+      }
     } else {
       const success = await sendVote("up");
       if (!success) return;
@@ -73,15 +112,14 @@ function LikesDeslikes({
   };
 
   const handleDislikeClick = async () => {
-    if (!userData?.name || !userData?.species) {
-      setErrorMsg(["User name or species is missing"]);
-      return;
-    }
+    if (!validateProfile()) return;
 
     if (clicked === "dislike") {
-      await removeVote();
-      setDislikes(dislikes - 1);
-      setClicked(null);
+      const removed = await removeVote();
+      if (removed) {
+        setDislikes(dislikes - 1);
+        setClicked(null);
+      }
     } else {
       const success = await sendVote("down");
       if (!success) return;
