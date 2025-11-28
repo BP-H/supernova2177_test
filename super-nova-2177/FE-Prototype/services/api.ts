@@ -112,7 +112,7 @@ export const api = {
         name: p.title,
         description: p.description || p.title, // Fallback if description is empty
         author_id: p.author_id,
-        author_username: 'Traveler', // Backend might not return username on proposal object directly, need to check type
+        author_username: p.userName || p.author_username || 'Traveler',
         media_type: p.media?.video ? 'video' : p.media?.image ? 'image' : 'text',
         media_url: p.media?.video || p.media?.image || '',
         echo: '0',

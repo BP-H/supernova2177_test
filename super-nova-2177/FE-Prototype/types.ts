@@ -54,6 +54,10 @@ export interface Proposal {
   description: string;
   author_id: string;
   author_username?: string;
+  userName?: string; // Backend field
+  userInitials?: string; // Backend field
+  author_type?: string; // Backend field
+  author_img?: string; // Backend field
   status: 'active' | 'passed' | 'rejected';
   created_at: string;
   voting_deadline: string;

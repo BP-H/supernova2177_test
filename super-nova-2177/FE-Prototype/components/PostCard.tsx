@@ -135,12 +135,16 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
         <LiquidGlass className="rounded-3xl p-6 transition-all hover:border-nova-cyan/30 group">
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-nova-purple to-nova-pink flex items-center justify-center font-bold text-lg text-white shadow-lg shrink-0">
-                        {(isProposal ? (proposal.author_username?.[0] || proposal.author_id?.[0] || 'A') : (vibe.author_username?.[0] || 'A'))}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-nova-purple to-nova-pink flex items-center justify-center font-bold text-lg text-white shadow-lg shrink-0 overflow-hidden">
+                        {isProposal && proposal.author_img ? (
+                            <img src={proposal.author_img} alt="avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            (isProposal ? (proposal.userInitials || proposal.userName?.[0] || proposal.author_username?.[0] || 'A') : (vibe.author_username?.[0] || 'A'))
+                        )}
                     </div>
                     <div>
                         <div className="font-bold text-white flex items-center gap-2">
-                            {isProposal ? (proposal.author_username || `User ${proposal.author_id}`) : vibe.author_username}
+                            {isProposal ? (proposal.userName || proposal.author_username || `User ${proposal.author_id}`) : vibe.author_username}
                             {isProposal && (
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-widest ${proposal.status === 'active' ? 'bg-nova-acid/20 text-nova-acid' : 'bg-gray-700 text-gray-400'
                                     }`}>
