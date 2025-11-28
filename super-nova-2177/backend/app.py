@@ -55,7 +55,7 @@ if os.path.exists(supernova_dir_check) and os.path.isdir(supernova_dir_check):
     if "/app/backend/supernova_2177_ui_weighted" not in sys.path:
         sys.path.insert(0, "/app/backend/supernova_2177_ui_weighted")
     try:
-        from superNova_2177 import (
+        from supernova_2177 import (
             register_vote, tally_votes, decide as weighted_decide,
             get_threshold as get_weighted_threshold, SessionLocal, get_db,
             get_settings, DB_ENGINE_URL
