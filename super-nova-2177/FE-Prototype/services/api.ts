@@ -82,9 +82,19 @@ export const api = {
   },
 
   register: async (user: Partial<User> & { password: string }) => {
-    return await fetchJson<User>('/users/register', {
-      method: 'POST',
-      body: JSON.stringify(user)
+    // Mock registration since backend doesn't support it
+    console.log("Mocking registration for:", user);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          id: Date.now(),
+          username: user.username || 'Traveler',
+          species: user.species || 'human',
+          harmony_score: '50',
+          creative_spark: '50',
+          network_centrality: 0
+        } as User);
+      }, 500);
     });
   },
 

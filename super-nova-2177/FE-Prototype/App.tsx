@@ -146,16 +146,16 @@ const MainLayout: React.FC = () => {
                                         creative_spark: '50',
                                         network_centrality: 0
                                     });
-                                    // Auto login after register
-                                    const res = await api.login(username, password);
-                                    login(res.access_token);
+                                    // Auto login after register with a mock token
+                                    login('mock-token-' + Date.now());
                                 } else {
                                     const res = await api.login(username, password);
                                     login(res.access_token);
                                 }
-                            } catch (err) {
+                            } catch (err: any) {
                                 console.error(err);
-                                setError(isRegistering ? "Registration Failed" : "Authentication Failed");
+                                const errorMessage = err.message || (isRegistering ? "Registration Failed" : "Authentication Failed");
+                                setError(errorMessage);
                             }
                         }}
                         className="w-full bg-gradient-to-r from-nova-purple to-nova-pink text-white font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(242,0,137,0.3)]"
