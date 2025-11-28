@@ -1,0 +1,159 @@
+
+import React from 'react';
+import { VibeNode, Proposal } from '../types';
+import { LiquidGlass } from './LiquidGlass';
+import { VoteControl } from './VoteControl';
+import { Heart, MessageCircle, Share2, Zap, ExternalLink, FileText } from 'lucide-react';
+import { api } from '../services/api';
+
+interface PostCardProps {
+    item: VibeNode | Proposal;
+    type: 'vibe' | 'proposal';
+}
+
+export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
+    const isProposal = type === 'proposal';
+    const proposal = item as Proposal;
+    const vibe = item as VibeNode;
+
+    const handleLike = async () => {
+        if (!isProposal) {
+            await api.likeVibeNode(vibe.id);
+        }
+    };
+
+    const renderMedia = () => {
+        let mediaUrl = '';
+        let mediaType = 'text';
+
+        if (isProposal) {
+            if (proposal.media?.video || proposal.video) {
+                mediaUrl = proposal.media?.video || proposal.video || '';
+                mediaType = 'video';
+            } else if (proposal.media?.image || proposal.image) {
+                mediaUrl = proposal.media?.image || proposal.image || '';
+                mediaType = 'image';
+            } else if (proposal.media?.link || proposal.link) {
+                mediaUrl = proposal.media?.link || proposal.link || '';
+                mediaType = 'link';
+            } else if (proposal.media?.file || proposal.file) {
+                mediaUrl = proposal.media?.file || proposal.file || '';
+                mediaType = 'file';
+            }
+        } else {
+            mediaUrl = vibe.media_url || '';
+            mediaType = vibe.media_type;
+        }
+
+        if (!mediaUrl) return null;
+
+        // Ensure URL is absolute if it's a relative path from backend
+        const fullUrl = mediaUrl.startsWith('http') ? mediaUrl : `${(process.env.NEXT_PUBLIC_API_URL || 'https://supernova2177test-production.up.railway.app').replace(/\/$/, '')}${mediaUrl}`;
+
+        switch (mediaType) {
+            case 'video':
+                return (
+                    <div className="mt-4 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-black">
+                        <video src={fullUrl} controls className="w-full max-h-[500px]" />
+                    </div>
+                );
+            case 'image':
+                return (
+                    <div className="mt-4 rounded-xl overflow-hidden shadow-lg border border-white/10">
+                        <img src={fullUrl} alt="Content" className="w-full object-cover max-h-[500px]" />
+                    </div>
+                );
+            case 'link':
+                return (
+                    <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group/link">
+                        <div className="p-2 bg-nova-cyan/20 rounded-lg text-nova-cyan group-hover/link:scale-110 transition-transform">
+                            <ExternalLink size={20} />
+                        </div>
+                        <div className="overflow-hidden">
+                            <div className="text-sm text-gray-400 font-mono">External Link</div>
+                            <div className="text-white truncate font-bold">{fullUrl}</div>
+                        </div>
+                    </a>
+                );
+            case 'file':
+                return (
+                    <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group/file">
+                        <div className="p-2 bg-nova-purple/20 rounded-lg text-nova-purple group-hover/file:scale-110 transition-transform">
+                            <FileText size={20} />
+                        </div>
+                        <div className="overflow-hidden">
+                            <div className="text-sm text-gray-400 font-mono">Attachment</div>
+                            <div className="text-white truncate font-bold">Download File</div>
+                        </div>
+                    </a>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <LiquidGlass className="rounded-3xl p-6 transition-all hover:border-nova-cyan/30 group">
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-nova-purple to-nova-pink flex items-center justify-center font-bold text-lg text-white shadow-lg">
+                        {(isProposal ? proposal.author_id : vibe.author_username?.[0] || 'A')}
+                    </div>
+                    <div>
+                        <div className="font-bold text-white flex items-center gap-2">
+                            {isProposal ? `Prop #${proposal.id}` : vibe.author_username}
+                            {isProposal && (
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-widest ${proposal.status === 'active' ? 'bg-nova-acid/20 text-nova-acid' : 'bg-gray-700 text-gray-400'
+                                    }`}>
+                                    {proposal.status}
+                                </span>
+                            )}
+                        </div>
+                        <div className="text-xs text-gray-400 font-mono">
+                            {new Date(item.created_at).toLocaleString()}
+                        </div>
+                    </div>
+                </div>
+
+                {!isProposal && (
+                    <div className="text-nova-cyan font-mono text-xs flex items-center gap-1">
+                        <Zap size={14} className="fill-nova-cyan" />
+                        {parseFloat(vibe.echo).toFixed(1)} Echo
+                    </div>
+                )}
+            </div>
+
+            <div className="mb-6">
+                <h3 className="text-xl font-bold text-white mb-2">{isProposal ? proposal.title : vibe.name}</h3>
+                <p className="text-gray-300 font-light leading-relaxed whitespace-pre-wrap">
+                    {isProposal ? proposal.description : vibe.description}
+                </p>
+
+                {renderMedia()}
+            </div>
+
+            <div className="pt-4 border-t border-white/5">
+                {isProposal ? (
+                    <div className="space-y-4">
+                        <VoteControl proposalId={proposal.id} summary={proposal.votes_summary} />
+                        {/* Add comment section toggle or preview here if needed to match frontend exactly */}
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-between">
+                        <div className="flex gap-4">
+                            <button onClick={handleLike} className="flex items-center gap-2 text-gray-400 hover:text-nova-pink transition-colors">
+                                <Heart size={20} /> <span className="text-sm font-mono">{vibe.likes_count}</span>
+                            </button>
+                            <button className="flex items-center gap-2 text-gray-400 hover:text-nova-cyan transition-colors">
+                                <MessageCircle size={20} /> <span className="text-sm font-mono">{vibe.comments_count}</span>
+                            </button>
+                        </div>
+                        <button className="text-gray-400 hover:text-white transition-colors">
+                            <Share2 size={20} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        </LiquidGlass>
+    );
+};
