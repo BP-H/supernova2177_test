@@ -4,6 +4,7 @@ import LiquidGlass from '@/content/liquid glass/LiquidGlass';
 import { BiSolidLike, BiSolidDislike } from 'react-icons/bi';
 import { FaUser, FaBriefcase } from 'react-icons/fa';
 import { BsFillCpuFill } from 'react-icons/bs';
+import { useUser } from "@/content/profile/UserContext";
 
 function LikeSection({ icon: Icon, label, likes, dislikes }) {
   
@@ -57,23 +58,34 @@ function LikesInfo({ proposalId }) {
   const [likes, setLikes] = useState([]);
   const [dislikes, setDislikes] = useState([]);
   const [approval, setApproval] = useState(false);
-  
+  const [error, setError] = useState("");
+  const { userData } = useUser();
+  const backendUrl = userData?.activeBackend || process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     async function fetchVotes() {
+      if (!backendUrl) {
+        setError("API base URL is not configured.");
+        return;
+      }
+
       try {
-        const res = await fetch(`http://localhost:8000/proposals`);
-        const data = await res.json();
-        const proposal = data.find(p => p.id === proposalId);
-        if (proposal) {
-          setLikes(proposal.likes || []);
-          setDislikes(proposal.dislikes || []);
+        setError("");
+        const res = await fetch(`${backendUrl}/proposals/${proposalId}`);
+        if (!res.ok) {
+          setError(`Failed to load proposal: ${res.status} ${res.statusText}`);
+          return;
         }
+
+        const data = await res.json();
+        setLikes(data.likes || []);
+        setDislikes(data.dislikes || []);
       } catch (err) {
-        console.error("Failed to fetch likes/dislikes:", err); 
+        setError(`Failed to fetch likes/dislikes: ${err.message}`);
       }
     }
     fetchVotes();
-  }, [proposalId]);
+  }, [backendUrl, proposalId]);
 
   const humanLikes = likes.filter(v => v.type === 'human').length;
   const companyLikes = likes.filter(v => v.type === 'company').length;
@@ -86,6 +98,11 @@ function LikesInfo({ proposalId }) {
   return (
     <LiquidGlass className={"rounded-[25px] z-999"}>
       <div className="flex flex-col rounded-[25px] p-2 gap-2">
+        {error && (
+          <p className="text-red-500 text-sm" role="alert">
+            {error}
+          </p>
+        )}
         <LikeSection icon={FaUser} label="Humans" likes={humanLikes} dislikes={humanDislikes} />
         <LikeSection icon={FaBriefcase} label="Companies" likes={companyLikes} dislikes={companyDislikes} />
         <LikeSection icon={BsFillCpuFill} label="AI" likes={aiLikes} dislikes={aiDislikes} />
