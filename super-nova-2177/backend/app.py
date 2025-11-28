@@ -244,6 +244,12 @@ class DecisionSchema(BaseModel):
     proposal_id: int
     status: str
 
+
+class ProfileUpdate(BaseModel):
+    username: str
+    species: str = "human"
+    avatar_url: str | None = ""
+
 class RunSchema(BaseModel):
     id: int
     decision_id: int
@@ -381,6 +387,64 @@ def debug_search(search: str = Query(...), db: Session = Depends(get_db)):
         return {"error": str(e), "query_working": False}
 
 #
+@app.post("/profile", summary="Create or update user profile")
+def upsert_profile(profile: ProfileUpdate, db: Session = Depends(get_db)):
+    username = profile.username.strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="Username is required")
+
+    species = (profile.species or "human").lower()
+    if species not in ("human", "company", "ai"):
+        raise HTTPException(status_code=400, detail="Invalid species value")
+
+    avatar_url = profile.avatar_url or ""
+
+    if SUPER_NOVA_AVAILABLE:
+        try:
+            user = db.query(Harmonizer).filter(Harmonizer.username == username).first()
+            if user:
+                user.species = species
+                if avatar_url:
+                    user.profile_pic = avatar_url
+            else:
+                user = Harmonizer(
+                    username=username,
+                    email=f"{username}@example.com",
+                    hashed_password="fallback",
+                    species=species,
+                    profile_pic=avatar_url or "default.jpg",
+                    created_at=datetime.datetime.utcnow(),
+                    is_active=True,
+                    is_admin=False,
+                    harmony_score=0.0,
+                    creative_spark=0.0,
+                    karma_score=0.0,
+                    network_centrality=0.0,
+                    consent_given=True,
+                    bio="",
+                )
+                db.add(user)
+
+            db.commit()
+            db.refresh(user)
+            return {
+                "ok": True,
+                "username": user.username,
+                "species": user.species,
+                "avatar_url": getattr(user, "profile_pic", avatar_url),
+            }
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to upsert profile: {str(e)}")
+
+    return {
+        "ok": True,
+        "username": username,
+        "species": species,
+        "avatar_url": avatar_url,
+    }
+
+
 @app.get("/profile/{username}", summary="Get user profile")
 def profile(username: str, db: Session = Depends(get_db)):
     if SUPER_NOVA_AVAILABLE:
@@ -401,7 +465,7 @@ def profile(username: str, db: Session = Depends(get_db)):
                 }
         except Exception as e:
             print(f"Error fetching SuperNova profile: {e}")
-    
+
     # Fallback
     return {
         "username": username,

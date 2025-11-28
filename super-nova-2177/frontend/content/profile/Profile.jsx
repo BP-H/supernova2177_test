@@ -1,12 +1,10 @@
 import content from "@/assets/content.json";
 import { FaUser, FaBriefcase } from "react-icons/fa";
 import { BsFillCpuFill } from "react-icons/bs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import { FaPlus } from "react-icons/fa6";
 import { useUser } from "./UserContext";
-import Notification from "../Notification";
-import Error from "../Error";
 
 const typeIcons = {
   human: <FaUser />,
@@ -21,54 +19,94 @@ function Profile({errorMsg, setErrorMsg, setNotify}) {
   const [getAvatar, setGetAvatar] = useState(userData.avatar || "");
   const [getName, setGetName] = useState(userData.name || "");
 
-  function handleUser() {
+  useEffect(() => {
+    setOpen(userData.species || "");
+    setGetAvatar(userData.avatar || "");
+    setGetName(userData.name || "");
+  }, [userData]);
+
+  async function persistProfile(profilePayload) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
+
+    try {
+      const res = await fetch(`${apiUrl}/profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: profilePayload.name,
+          species: profilePayload.species,
+          avatar_url: profilePayload.avatar,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        setErrorMsg([
+          `Failed to sync profile with the server: ${res.status} ${res.statusText}${
+            errorText ? ` - ${errorText}` : ""
+          }`,
+        ]);
+      }
+    } catch (err) {
+      setErrorMsg([`Failed to sync profile with the server: ${err.message}`]);
+    }
+  }
+
+  async function handleUser() {
     const errors = [];
-    const notify = [];
-    if (!getName) errors.push("Invalid user name.");
+    const trimmedName = getName.trim();
+
+    if (!trimmedName) errors.push("Invalid user name.");
     if (!open) errors.push("No species selected.");
-    if (open && getName) notify.push("User created successfully!");
-    setErrorMsg([]);
-    setUserData({
-      species: open,
-      avatar: getAvatar,
-      name: getName,
-    });
+
     if (errors.length > 0) {
       setErrorMsg(errors);
       return;
     }
-    if (notify.length > 0) {
-      setNotify(notify);
-      return;
-    }
+
+    const profilePayload = {
+      species: open,
+      avatar: getAvatar || "",
+      name: trimmedName,
+    };
+
+    setErrorMsg([]);
+    setUserData((prev) => ({ ...prev, ...profilePayload }));
+    setNotify(["User created successfully!"]);
+    await persistProfile(profilePayload);
   }
 
   function handleReset() {
     setGetAvatar("");
     setGetName("");
     setOpen("");
+    setUserData((prev) => ({ ...prev, species: "", avatar: "", name: "" }));
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("userProfile");
+    }
   }
 
   async function handleAvatarSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${apiUrl}/upload-image`, {
-      method: "POST",
-      body: formData,
-    });
-    if (!res.ok) throw new Error("Failed to upload avatar");
-    const data = await res.json();
-    
-    setGetAvatar(`${process.env.NEXT_PUBLIC_API_URL}${data.url}`);
-  } catch (err) {
-    console.error("Avatar upload failed:", err);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/upload-image`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Failed to upload avatar");
+      const data = await res.json();
+
+      setGetAvatar(`${process.env.NEXT_PUBLIC_API_URL}${data.url}`);
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+    }
   }
-}
 
   return (
     <div className="text-[var(--text-black)] bgWhiteTrue shadow-md p-2 rounded-[20px]">
