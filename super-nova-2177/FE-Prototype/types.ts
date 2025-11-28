@@ -22,7 +22,7 @@ export interface VibeNode {
   id: number;
   name: string;
   description: string;
-  author_id: number;
+  author_id: number | string;
   author_username: string;
   media_type: 'text' | 'image' | 'video' | 'audio' | 'mixed';
   media_url?: string;
@@ -33,32 +33,9 @@ export interface VibeNode {
   fractal_depth: number;
   likes_count: number;
   comments_count: number;
-  // Frontend helpers for graph derived nodes
-  x?: number;
-  y?: number;
-}
-
-export interface Proposal {
-  id: number;
-  title: string;
-  description: string;
-  status: 'active' | 'passed' | 'rejected';
-  proposal_type: string;
-  author_id: number;
-  created_at: string;
-  voting_deadline: string;
-  votes_summary: VoteSummary;
-  // Media fields matching frontend logic
-  media?: {
-    image?: string;
-    video?: string;
-    link?: string;
-    file?: string;
-  };
-  image?: string;
-  video?: string;
-  link?: string;
-  file?: string;
+  down_ai?: number;
+  up_company?: number;
+  down_company?: number;
 }
 
 export interface VoteSummary {
@@ -69,6 +46,29 @@ export interface VoteSummary {
   up_company?: number;
   down_company?: number;
   [key: string]: number | undefined;
+}
+
+export interface Proposal {
+  id: number;
+  title: string;
+  description: string;
+  author_id: string;
+  author_username?: string;
+  status: 'active' | 'passed' | 'rejected';
+  created_at: string;
+  voting_deadline: string;
+  votes_summary: VoteSummary;
+  media?: {
+    image?: string;
+    video?: string;
+    link?: string;
+    file?: string;
+  };
+  image?: string;
+  video?: string;
+  link?: string;
+  file?: string;
+  comments?: any[];
 }
 
 export interface NetworkNode {

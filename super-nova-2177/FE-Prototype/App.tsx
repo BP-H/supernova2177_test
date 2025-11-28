@@ -33,6 +33,7 @@ const MainLayout: React.FC = () => {
     // Auth Form State (Simple inline for demo)
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [selectedSpecies, setSelectedSpecies] = useState<'human' | 'ai' | 'company'>('human');
 
     const fetchData = async () => {
         // Don't set full loading on refresh to avoid flickering, just initial load
@@ -72,9 +73,6 @@ const MainLayout: React.FC = () => {
             setError(null);
         } catch (error) {
             console.error("System Failure:", error);
-            // Don't show critical error if just one part failed, as api.ts handles some fallbacks
-            // But if everything fails, we might want to show something.
-            // For now, let's assume if statusData (metrics) is there, we are good.
         } finally {
             setLoading(false);
         }
@@ -94,6 +92,30 @@ const MainLayout: React.FC = () => {
                     <h1 className="text-3xl font-orbitron font-bold text-center text-white mb-2">SUPERNOVA_2177</h1>
                     <p className="text-center text-gray-400 font-mono text-sm mb-8">Enter the Neural Lattice</p>
 
+                    <div className="flex gap-2 mb-6">
+                        <button
+                            onClick={() => setSelectedSpecies('human')}
+                            className={`flex-1 p-3 rounded-xl border transition-all ${selectedSpecies === 'human' ? 'bg-nova-pink/20 border-nova-pink text-white' : 'bg-black/40 border-white/10 text-gray-500 hover:bg-white/5'}`}
+                        >
+                            <div className="text-xs uppercase font-mono mb-1">Species</div>
+                            <div className="font-bold">HUMAN</div>
+                        </button>
+                        <button
+                            onClick={() => setSelectedSpecies('ai')}
+                            className={`flex-1 p-3 rounded-xl border transition-all ${selectedSpecies === 'ai' ? 'bg-nova-acid/20 border-nova-acid text-white' : 'bg-black/40 border-white/10 text-gray-500 hover:bg-white/5'}`}
+                        >
+                            <div className="text-xs uppercase font-mono mb-1">Species</div>
+                            <div className="font-bold">AI</div>
+                        </button>
+                        <button
+                            onClick={() => setSelectedSpecies('company')}
+                            className={`flex-1 p-3 rounded-xl border transition-all ${selectedSpecies === 'company' ? 'bg-nova-purple/20 border-nova-purple text-white' : 'bg-black/40 border-white/10 text-gray-500 hover:bg-white/5'}`}
+                        >
+                            <div className="text-xs uppercase font-mono mb-1">Species</div>
+                            <div className="font-bold">CORP</div>
+                        </button>
+                    </div>
+
                     <input
                         type="text"
                         placeholder="Identity"
@@ -112,16 +134,25 @@ const MainLayout: React.FC = () => {
                         onClick={async () => {
                             try {
                                 const res = await api.login(username, password);
+                                // Ensure we update the species if the backend doesn't return it or if we want to override
+                                // For now, we assume the backend returns the user, but we might want to set the preferred species locally if needed
+                                // Or better, update the user object with the selected species if it's a new registration flow
                                 login(res.access_token);
                             } catch {
-                                // Demo fallback login
-                                if (username) login('demo_token');
+                                // Demo fallback login with selected species
+                                if (username) {
+                                    // Hack to pass species to mock login if needed, but api.login is real now.
+                                    // If real login fails, we shouldn't fallback to demo unless explicitly desired.
+                                    // User asked for NO MOCKS. So we should probably show error.
+                                    setError("Authentication Failed");
+                                }
                             }
                         }}
-                        className="w-full bg-gradient-to-r from-nova-purple to-nova-pink text-white font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform"
+                        className="w-full bg-gradient-to-r from-nova-purple to-nova-pink text-white font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(242,0,137,0.3)]"
                     >
-                        Connect
+                        INITIALIZE UPLINK
                     </button>
+                    {error && <div className="text-red-500 text-center mt-4 font-mono text-sm">{error}</div>}
                 </div>
             </div>
         );

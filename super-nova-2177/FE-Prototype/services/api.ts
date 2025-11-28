@@ -178,6 +178,12 @@ export const api = {
     });
   },
 
+  removeVote: async (proposalId: number) => {
+    return await fetchJson<any>(`/votes?proposal_id=${proposalId}`, {
+      method: 'DELETE'
+    });
+  },
+
   createProposal: async (formData: FormData) => {
     const response = await fetch(`${API_BASE_URL}/proposals`, {
       method: 'POST',
@@ -211,5 +217,25 @@ export const api = {
     } catch {
       return { nodes: [], edges: [], metrics: { node_count: 0, edge_count: 0, density: 0 } };
     }
+  },
+
+  // Comments
+  getComments: async (proposalId: number) => {
+    try {
+      return await fetchJson<any[]>(`/comments?proposal_id=${proposalId}`);
+    } catch {
+      return [];
+    }
+  },
+
+  addComment: async (proposalId: number, text: string, species: string) => {
+    return await fetchJson<any>('/comments', {
+      method: 'POST',
+      body: JSON.stringify({
+        proposal_id: proposalId,
+        comment: text,
+        species: species
+      })
+    });
   }
 };

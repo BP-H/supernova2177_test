@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { VibeNode, Proposal } from '../types';
 import { LiquidGlass } from './LiquidGlass';
 import { VoteControl } from './VoteControl';
+import { CommentSection } from './CommentSection';
 import { Heart, MessageCircle, Share2, Zap, ExternalLink, FileText } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -19,6 +19,21 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
     const handleLike = async () => {
         if (!isProposal) {
             await api.likeVibeNode(vibe.id);
+        }
+    };
+
+    const getEmbedUrl = (url: string) => {
+        if (!url) return "";
+        try {
+            if (url.includes("youtube.com/embed/")) return url;
+            const regExp = /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const match = url.match(regExp);
+            if (match && match[1]) {
+                return `https://www.youtube.com/embed/${match[1]}`;
+            }
+            return url;
+        } catch {
+            return url;
         }
     };
 
@@ -48,13 +63,20 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
         if (!mediaUrl) return null;
 
         // Ensure URL is absolute if it's a relative path from backend
-        const fullUrl = mediaUrl.startsWith('http') ? mediaUrl : `${(process.env.NEXT_PUBLIC_API_URL || 'https://supernova2177test-production.up.railway.app').replace(/\/$/, '')}${mediaUrl}`;
+        const fullUrl = mediaUrl.startsWith('http') ? mediaUrl : `${(import.meta.env.VITE_API_URL || 'https://supernova2177test-production.up.railway.app').replace(/\/$/, '')}${mediaUrl}`;
 
         switch (mediaType) {
             case 'video':
                 return (
-                    <div className="mt-4 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-black">
-                        <video src={fullUrl} controls className="w-full max-h-[500px]" />
+                    <div className="mt-4 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-black aspect-video">
+                        <iframe
+                            src={getEmbedUrl(fullUrl)}
+                            title="Video Content"
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
                     </div>
                 );
             case 'image':
@@ -92,16 +114,33 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
         }
     };
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'Unknown Date';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Invalid Date';
+            return date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch {
+            return 'Invalid Date';
+        }
+    };
+
     return (
         <LiquidGlass className="rounded-3xl p-6 transition-all hover:border-nova-cyan/30 group">
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-nova-purple to-nova-pink flex items-center justify-center font-bold text-lg text-white shadow-lg">
-                        {(isProposal ? proposal.author_id : vibe.author_username?.[0] || 'A')}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-nova-purple to-nova-pink flex items-center justify-center font-bold text-lg text-white shadow-lg shrink-0">
+                        {(isProposal ? (proposal.author_username?.[0] || proposal.author_id?.[0] || 'A') : (vibe.author_username?.[0] || 'A'))}
                     </div>
                     <div>
                         <div className="font-bold text-white flex items-center gap-2">
-                            {isProposal ? `Prop #${proposal.id}` : vibe.author_username}
+                            {isProposal ? (proposal.author_username || `User ${proposal.author_id}`) : vibe.author_username}
                             {isProposal && (
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-widest ${proposal.status === 'active' ? 'bg-nova-acid/20 text-nova-acid' : 'bg-gray-700 text-gray-400'
                                     }`}>
@@ -110,7 +149,7 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
                             )}
                         </div>
                         <div className="text-xs text-gray-400 font-mono">
-                            {new Date(item.created_at).toLocaleString()}
+                            {formatDate(item.created_at)}
                         </div>
                     </div>
                 </div>
@@ -136,7 +175,7 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
                 {isProposal ? (
                     <div className="space-y-4">
                         <VoteControl proposalId={proposal.id} summary={proposal.votes_summary} />
-                        {/* Add comment section toggle or preview here if needed to match frontend exactly */}
+                        <CommentSection proposalId={proposal.id} initialComments={proposal.comments} />
                     </div>
                 ) : (
                     <div className="flex items-center justify-between">
