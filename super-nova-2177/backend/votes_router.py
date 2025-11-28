@@ -61,11 +61,20 @@ def add_vote(v: VoteIn, db: Session = Depends(get_db)):
         harmonizer = db.query(Harmonizer).filter_by(username=v.username).first()
         if harmonizer is None:
             # Criar harmonizer automaticamente se não existir
-            harmonizer = Harmonizer(username=v.username, email=f"{v.username}@example.com", hashed_password="dummy")
+            harmonizer = Harmonizer(
+                username=v.username,
+                email=f"{v.username}@example.com",
+                hashed_password="dummy",
+                species=v.voter_type,
+            )
             db.add(harmonizer)
             db.commit()
             db.refresh(harmonizer)
             logger.info(f"Harmonizer '{v.username}' criado automaticamente.")
+        else:
+            # Atualizar species (voter_type) para respeitar protocolo tri-espécies
+            if hasattr(harmonizer, "species") and harmonizer.species != v.voter_type:
+                harmonizer.species = v.voter_type
 
         harmonizer_id = harmonizer.id
 
@@ -82,6 +91,8 @@ def add_vote(v: VoteIn, db: Session = Depends(get_db)):
             if hasattr(existing_vote, "choice"):
                 existing_vote.choice = v.choice
             existing_vote.voter_type = v.voter_type
+            if hasattr(existing_vote, "species"):
+                existing_vote.species = v.voter_type
         else:
             # Cria novo voto
             vote_kwargs = {
@@ -93,6 +104,8 @@ def add_vote(v: VoteIn, db: Session = Depends(get_db)):
                 vote_kwargs["vote"] = v.choice
             if hasattr(ProposalVote, "choice"):
                 vote_kwargs["choice"] = v.choice
+            if hasattr(ProposalVote, "species"):
+                vote_kwargs["species"] = v.voter_type
             vote = ProposalVote(**vote_kwargs)
             db.add(vote)
 
@@ -154,7 +167,9 @@ def list_votes(db: Session = Depends(get_db)):
         {
             "proposal_id": v.proposal_id,
             "harmonizer_id": v.harmonizer_id,
-            "vote": v.vote,
-            "voter_type": v.voter_type
+            "vote": getattr(v, "vote", None),
+            "choice": getattr(v, "choice", getattr(v, "vote", None)),
+            "voter_type": getattr(v, "voter_type", None),
+            "species": getattr(v, "species", getattr(v, "voter_type", None)),
         } for v in votes
     ]
