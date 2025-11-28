@@ -30,10 +30,11 @@ const MainLayout: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState<boolean>(false);
 
-    // Auth Form State (Simple inline for demo)
+    // Auth Form State
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [selectedSpecies, setSelectedSpecies] = useState<'human' | 'ai' | 'company'>('human');
+    const [isRegistering, setIsRegistering] = useState(false);
 
     const fetchData = async () => {
         // Don't set full loading on refresh to avoid flickering, just initial load
@@ -90,7 +91,9 @@ const MainLayout: React.FC = () => {
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
                 <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
                     <h1 className="text-3xl font-orbitron font-bold text-center text-white mb-2">SUPERNOVA_2177</h1>
-                    <p className="text-center text-gray-400 font-mono text-sm mb-8">Enter the Neural Lattice</p>
+                    <p className="text-center text-gray-400 font-mono text-sm mb-8">
+                        {isRegistering ? 'Establish New Identity' : 'Enter the Neural Lattice'}
+                    </p>
 
                     <div className="flex gap-2 mb-6">
                         <button
@@ -132,26 +135,46 @@ const MainLayout: React.FC = () => {
                     />
                     <button
                         onClick={async () => {
+                            setError(null);
                             try {
-                                const res = await api.login(username, password);
-                                // Ensure we update the species if the backend doesn't return it or if we want to override
-                                // For now, we assume the backend returns the user, but we might want to set the preferred species locally if needed
-                                // Or better, update the user object with the selected species if it's a new registration flow
-                                login(res.access_token);
-                            } catch {
-                                // Demo fallback login with selected species
-                                if (username) {
-                                    // Hack to pass species to mock login if needed, but api.login is real now.
-                                    // If real login fails, we shouldn't fallback to demo unless explicitly desired.
-                                    // User asked for NO MOCKS. So we should probably show error.
-                                    setError("Authentication Failed");
+                                if (isRegistering) {
+                                    await api.register({
+                                        username,
+                                        password,
+                                        species: selectedSpecies,
+                                        harmony_score: '50', // Default starting score
+                                        creative_spark: '50',
+                                        network_centrality: 0
+                                    });
+                                    // Auto login after register
+                                    const res = await api.login(username, password);
+                                    login(res.access_token);
+                                } else {
+                                    const res = await api.login(username, password);
+                                    login(res.access_token);
                                 }
+                            } catch (err) {
+                                console.error(err);
+                                setError(isRegistering ? "Registration Failed" : "Authentication Failed");
                             }
                         }}
                         className="w-full bg-gradient-to-r from-nova-purple to-nova-pink text-white font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(242,0,137,0.3)]"
                     >
-                        INITIALIZE UPLINK
+                        {isRegistering ? 'ESTABLISH IDENTITY' : 'INITIALIZE UPLINK'}
                     </button>
+
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={() => {
+                                setIsRegistering(!isRegistering);
+                                setError(null);
+                            }}
+                            className="text-nova-cyan hover:text-white text-sm font-mono transition-colors"
+                        >
+                            {isRegistering ? '< RETURN TO LOGIN' : 'NO IDENTITY? CREATE ONE >'}
+                        </button>
+                    </div>
+
                     {error && <div className="text-red-500 text-center mt-4 font-mono text-sm">{error}</div>}
                 </div>
             </div>
