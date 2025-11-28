@@ -1,39 +1,10 @@
+/// <reference types="vite/client" />
 
 import { SystemMetrics, GraphData, VibeNode, Proposal, AuthResponse, User } from '../types';
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://supernova2177test-production.up.railway.app').replace(/\/$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://supernova2177test-production.up.railway.app').replace(/\/$/, '');
 
 let authToken: string | null = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-// Fallback Data for Simulation Mode
-const FALLBACK_METRICS: SystemMetrics = {
-  status: 'simulation',
-  timestamp: new Date().toISOString(),
-  metrics: {
-    total_harmonizers: 1042,
-    total_vibenodes: 8503,
-    community_wellspring: '54200.50',
-    current_system_entropy: 1150.5
-  },
-  mission: 'To create order and meaning from chaos through collective resonance.'
-};
-
-const FALLBACK_GRAPH: GraphData = {
-  nodes: Array.from({ length: 15 }, (_, i) => ({
-    id: `sim_node_${i}`,
-    label: `Resonance Node ${i}`,
-    type: Math.random() > 0.7 ? 'harmonizer' : 'vibenode',
-    degree_centrality: Math.random(),
-    echo: Math.random() * 10
-  })),
-  edges: Array.from({ length: 20 }, (_, i) => ({
-    source: `sim_node_${Math.floor(Math.random() * 15)}`,
-    target: `sim_node_${Math.floor(Math.random() * 15)}`,
-    type: 'entangled',
-    strength: Math.random()
-  })),
-  metrics: { node_count: 15, edge_count: 20, density: 0.1 }
-};
 
 const getHeaders = () => {
   const headers: HeadersInit = {
@@ -66,7 +37,7 @@ async function fetchJson<T>(endpoint: string, options: RequestInit = {}): Promis
     }
     return await response.json();
   } catch (error) {
-    console.warn(`Fetch warning for ${url}:`, error);
+    console.error(`Fetch error for ${url}:`, error);
     throw error;
   }
 }
@@ -84,27 +55,17 @@ export const api = {
 
   // Auth
   login: async (username: string, password: string): Promise<AuthResponse> => {
-    try {
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
 
-      const response = await fetch(`${API_BASE_URL}/token`, {
-        method: 'POST',
-        body: formData,
-      });
+    const response = await fetch(`${API_BASE_URL}/token`, {
+      method: 'POST',
+      body: formData,
+    });
 
-      if (!response.ok) throw new Error('Login failed');
-      return await response.json();
-    } catch (e) {
-      console.warn("Live login failed, using demo fallback if applicable");
-      // For demo purposes, if the backend login fails, we might throw 
-      // to let the UI handle it or provide a simulation token if hardcoded credentials match
-      if (username === 'demo') {
-        return { access_token: 'demo_token_123', token_type: 'bearer' };
-      }
-      throw e;
-    }
+    if (!response.ok) throw new Error('Login failed');
+    return await response.json();
   },
 
   register: async (user: Partial<User> & { password: string }) => {
@@ -115,29 +76,15 @@ export const api = {
   },
 
   getCurrentUser: async (): Promise<User> => {
-    try {
-      return await fetchJson<User>('/users/me');
-    } catch (e) {
-      // Fallback for demo/simulation if live endpoint fails (404/500)
-      if (authToken) {
-        return {
-          id: 999,
-          username: 'Traveler',
-          species: 'human',
-          harmony_score: '100',
-          creative_spark: '5000',
-          network_centrality: 0.5
-        };
-      }
-      throw e;
-    }
+    return await fetchJson<User>('/users/me');
   },
 
   // Content
   getVibeNodes: async (): Promise<VibeNode[]> => {
-    // Try to get explicit list, fallback to graph derivation
+    // Try to get explicit list, fallback to graph derivation if needed but prefer real endpoint
     try {
-      // The backend might not have a clean list endpoint, relying on graph
+      // Check if there is a direct endpoint, otherwise use graph
+      // For now, we will stick to graph derivation but WITHOUT silent fail to empty list if graph fails
       const graph = await api.getNetworkAnalysis(50);
       return graph.nodes
         .filter(n => n.type === 'vibenode')
@@ -156,7 +103,8 @@ export const api = {
           comments_count: 0
         }));
     } catch (e) {
-      return [];
+      console.error("Failed to fetch vibe nodes via graph", e);
+      throw e;
     }
   },
 
@@ -168,66 +116,53 @@ export const api = {
   },
 
   likeVibeNode: async (id: number) => {
-    try {
-      return await fetchJson<{ message: string }>(`/vibenodes/${id}/like`, {
-        method: 'POST'
-      });
-    } catch (e) {
-      return { message: 'Simulated Like' };
-    }
+    return await fetchJson<{ message: string }>(`/vibenodes/${id}/like`, {
+      method: 'POST'
+    });
   },
 
   // Governance
   getProposals: async (filter?: string, search?: string): Promise<Proposal[]> => {
-    try {
-      let url = '/proposals';
-      const params = new URLSearchParams();
+    let url = '/proposals';
+    const params = new URLSearchParams();
 
-      if (filter && filter !== 'All') {
-        const filterMap: Record<string, string> = {
-          'Latest': 'latest',
-          'Oldest': 'oldest',
-          'Top Liked': 'topLikes',
-          'Less Liked': 'fewestLikes',
-          'Popular': 'popular',
-          'AI': 'ai',
-          'Company': 'company',
-          'Human': 'human'
-        };
-        if (filterMap[filter]) {
-          params.append('filter', filterMap[filter]);
-        }
+    if (filter && filter !== 'All') {
+      const filterMap: Record<string, string> = {
+        'Latest': 'latest',
+        'Oldest': 'oldest',
+        'Top Liked': 'topLikes',
+        'Less Liked': 'fewestLikes',
+        'Popular': 'popular',
+        'AI': 'ai',
+        'Company': 'company',
+        'Human': 'human'
+      };
+      if (filterMap[filter]) {
+        params.append('filter', filterMap[filter]);
       }
-
-      if (search) {
-        params.append('search', search);
-      }
-
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      return await fetchJson<Proposal[]>(url);
-    } catch {
-      return [];
     }
+
+    if (search) {
+      params.append('search', search);
+    }
+
+    const queryString = params.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+
+    return await fetchJson<Proposal[]>(url);
   },
 
   voteProposal: async (proposalId: number, vote: 'up' | 'down', species: string) => {
-    try {
-      return await fetchJson<any>('/votes', {
-        method: 'POST',
-        body: JSON.stringify({
-          proposal_id: proposalId,
-          choice: vote,
-          species: species
-        })
-      });
-    } catch (e) {
-      console.warn("Vote simulation");
-      return { status: 'simulated' };
-    }
+    return await fetchJson<any>('/votes', {
+      method: 'POST',
+      body: JSON.stringify({
+        proposal_id: proposalId,
+        choice: vote,
+        species: species
+      })
+    });
   },
 
   createProposal: async (formData: FormData) => {
@@ -252,19 +187,10 @@ export const api = {
   },
 
   getStatus: async (): Promise<SystemMetrics> => {
-    try {
-      return await fetchJson<SystemMetrics>('/status');
-    } catch (e) {
-      return FALLBACK_METRICS;
-    }
+    return await fetchJson<SystemMetrics>('/status');
   },
 
   getNetworkAnalysis: async (limit = 100): Promise<GraphData> => {
-    try {
-      // Try without trailing slash first if that was an issue, or with slash
-      return await fetchJson<GraphData>(`/network-analysis/?limit=${limit}`);
-    } catch (e) {
-      return FALLBACK_GRAPH;
-    }
+    return await fetchJson<GraphData>(`/network-analysis/?limit=${limit}`);
   }
 };

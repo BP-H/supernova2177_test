@@ -1,12 +1,13 @@
+/// <reference types="vite/client" />
 import { GoogleGenAI } from "@google/genai";
 
 // Initialize the client.
 // Note: In a real production app, ensure specific security measures for API keys.
-// The prompt instructions specify utilizing process.env.API_KEY.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
 
 export const askCosmicNexus = async (prompt: string, context: string): Promise<string> => {
-  if (!process.env.API_KEY) {
+  if (!apiKey) {
     return "ACCESS_DENIED // API_KEY_MISSING // Please configure neural pathways.";
   }
 
