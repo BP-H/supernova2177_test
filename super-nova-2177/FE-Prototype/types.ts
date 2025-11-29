@@ -48,19 +48,30 @@ export interface VoteSummary {
   [key: string]: number | undefined;
 }
 
+export interface Comment {
+  id: number;
+  proposal_id: number;
+  user_id: number;
+  user: string;
+  user_img?: string;
+  species: string;
+  comment: string;
+  created_at: string;
+}
+
 export interface Proposal {
   id: number;
   title: string;
   description: string;
-  author_id: string;
+  author_id: number;
   author_username?: string;
   userName?: string; // Backend field
   userInitials?: string; // Backend field
-  author_type?: string; // Backend field
+  author_type?: 'human' | 'ai' | 'company'; // Backend field
   author_img?: string; // Backend field
   status: 'active' | 'passed' | 'rejected';
   created_at: string;
-  voting_deadline: string;
+  voting_deadline?: string;
   votes_summary: VoteSummary;
   media?: {
     image?: string;
@@ -72,7 +83,11 @@ export interface Proposal {
   video?: string;
   link?: string;
   file?: string;
-  comments?: any[];
+  comments: Comment[];
+
+  // Frontend specific fields for compatibility
+  likes?: any[];
+  dislikes?: any[];
 }
 
 export interface NetworkNode {

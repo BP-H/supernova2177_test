@@ -1,7 +1,7 @@
 import React from 'react';
 import { VibeNode, Proposal } from '../types';
 import { LiquidGlass } from './LiquidGlass';
-import { VoteControl } from './VoteControl';
+import { LikesDeslikes } from './LikesDeslikes';
 import { CommentSection } from './CommentSection';
 import { Heart, MessageCircle, Share2, Zap, ExternalLink, FileText } from 'lucide-react';
 import { api } from '../services/api';
@@ -178,7 +178,13 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
             <div className="pt-4 border-t border-white/5">
                 {isProposal ? (
                     <div className="space-y-4">
-                        <VoteControl proposalId={proposal.id} summary={proposal.votes_summary} />
+                        <div className="relative">
+                            <LikesDeslikes
+                                proposalId={proposal.id}
+                                initialLikes={proposal.likes?.length || 0}
+                                initialDislikes={proposal.dislikes?.length || 0}
+                            />
+                        </div>
                         <CommentSection proposalId={proposal.id} initialComments={proposal.comments} />
                     </div>
                 ) : (
