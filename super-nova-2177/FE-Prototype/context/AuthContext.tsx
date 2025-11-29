@@ -16,9 +16,9 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  login: async () => {},
-  logout: () => {},
-  updateSpecies: () => {},
+  login: async () => { },
+  logout: () => { },
+  updateSpecies: () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -30,6 +30,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
+      // Try to load user from local storage first for immediate UI
+      const storedUser = localStorage.getItem('user_data');
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Failed to parse stored user", e);
+        }
+      }
+
       if (token) {
         try {
           api.setToken(token);
@@ -37,7 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(userData);
         } catch (e) {
           console.warn("Session restore failed, logging out.");
-          api.logout();
+          // Don't logout immediately if we have stored user data, might just be offline
+          if (!storedUser) {
+            api.logout();
+          }
         }
       }
       setIsLoading(false);
@@ -48,18 +61,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (token: string) => {
     api.setToken(token);
     try {
-        const userData = await api.getCurrentUser();
-        setUser(userData);
+      const userData = await api.getCurrentUser();
+      setUser(userData);
     } catch (e) {
-        // Fallback user if profile fetch fails but token is valid (e.g. demo)
-        setUser({
-             id: 999,
-             username: 'Traveler',
-             species: 'human',
-             harmony_score: '100',
-             creative_spark: '5000',
-             network_centrality: 0.5
-        });
+      // Fallback user if profile fetch fails but token is valid (e.g. demo)
+      setUser({
+        id: 999,
+        username: 'Traveler',
+        species: 'human',
+        harmony_score: '100',
+        creative_spark: '5000',
+        network_centrality: 0.5
+      });
     }
   };
 
@@ -69,10 +82,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateSpecies = (species: Species) => {
-      if (!user) return;
-      // In a real app, this would be an API call to update profile
-      const updated = { ...user, species };
-      setUser(updated);
+    if (!user) return;
+    // In a real app, this would be an API call to update profile
+    const updated = { ...user, species };
+    setUser(updated);
   };
 
   return (

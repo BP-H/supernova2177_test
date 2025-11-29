@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { ArrowBigUp, ArrowBigDown, Users, Cpu, Briefcase } from 'lucide-react';
 import { api } from '../services/api';
 import { VoteSummary } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { SPECIES_WEIGHTS } from '../constants';
 
 interface VoteControlProps {
    proposalId: number;
@@ -16,44 +16,82 @@ export const VoteControl: React.FC<VoteControlProps> = ({ proposalId, summary, i
    const [userVote, setUserVote] = useState(initialUserVote);
    const [isVoting, setIsVoting] = useState(false);
 
-   // Calculate totals
-   const humanScore = (summary.up_human || 0) - (summary.down_human || 0);
-   const aiScore = (summary.up_ai || 0) - (summary.down_ai || 0);
-   const companyScore = (summary.up_company || 0) - (summary.down_company || 0);
+   // Calculate raw totals
+   const humanUp = summary.up_human || 0;
+   const humanDown = summary.down_human || 0;
+   const aiUp = summary.up_ai || 0;
+   const aiDown = summary.down_ai || 0;
+   const companyUp = summary.up_company || 0;
+   const companyDown = summary.down_company || 0;
 
-   const totalScore = humanScore + aiScore + companyScore;
+   // Calculate weighted score
+   const calculateWeightedScore = () => {
+      const activeSpecies = [];
+      if (humanUp + humanDown > 0) activeSpecies.push('human');
+      if (aiUp + aiDown > 0) activeSpecies.push('ai');
+      if (companyUp + companyDown > 0) activeSpecies.push('company');
+
+      if (activeSpecies.length === 0) return 0;
+
+      // Calculate share per species (1 / N active species)
+      // Assuming equal weights for now as per SPECIES_WEIGHTS
+      const totalWeight = activeSpecies.reduce((sum, s) => sum + SPECIES_WEIGHTS[s as keyof typeof SPECIES_WEIGHTS], 0);
+
+      let weightedUp = 0;
+      let weightedDown = 0;
+
+      if (activeSpecies.includes('human')) {
+         const count = humanUp + humanDown;
+         if (count > 0) {
+            const share = SPECIES_WEIGHTS.human / totalWeight;
+            weightedUp += (humanUp / count) * share;
+            weightedDown += (humanDown / count) * share;
+         }
+      }
+      if (activeSpecies.includes('ai')) {
+         const count = aiUp + aiDown;
+         if (count > 0) {
+            const share = SPECIES_WEIGHTS.ai / totalWeight;
+            weightedUp += (aiUp / count) * share;
+            weightedDown += (aiDown / count) * share;
+         }
+      }
+      if (activeSpecies.includes('company')) {
+         const count = companyUp + companyDown;
+         if (count > 0) {
+            const share = SPECIES_WEIGHTS.company / totalWeight;
+            weightedUp += (companyUp / count) * share;
+            weightedDown += (companyDown / count) * share;
+         }
+      }
+
+      // Return net score (Up - Down) scaled to 100 for display
+      return Math.round((weightedUp - weightedDown) * 100);
+   };
+
+   const weightedScore = calculateWeightedScore();
 
    const handleVote = async (direction: 'up' | 'down') => {
       if (!user || isVoting) return;
       setIsVoting(true);
+
+      // Optimistic update
+      const previousVote = userVote;
+      setUserVote(direction === previousVote ? null : direction);
+
       try {
          if (userVote === direction) {
             // Toggle off (remove vote)
-            // Assuming backend supports DELETE /votes?proposal_id=... or similar, 
-            // OR we just send a 'remove' request if API supports it.
-            // Based on frontend LikesDeslikes.jsx, it calls DELETE.
-            // We need to implement removeVote in api.ts or use a specific call.
-            // For now, let's assume api.voteProposal handles it or we add a remove method.
-            // Actually, let's add removeVote to api.ts in next step if not there, 
-            // but for now let's try to just set it to null locally and call the API.
-            // If api.voteProposal doesn't support removal, we might need to update api.ts.
-            // Let's assume we can pass 'remove' or similar, or better yet, use a new method.
-            // Wait, I didn't add removeVote to api.ts yet. I should have.
-            // Let's use a workaround or just implement it.
-            // I'll update api.ts to include removeVote in the next step if needed, 
-            // but for now let's just try to toggle.
-
-            // Actually, I'll just skip the API call for removal if I can't do it yet, 
-            // but the plan said "Ensure voteProposal handles vote removal".
-            // Let's assume I'll fix api.ts to have removeVote.
-            await api.removeVote(proposalId);
+            await api.removeVote(proposalId, user.username);
             setUserVote(null);
          } else {
-            await api.voteProposal(proposalId, direction, user.species);
+            await api.voteProposal(proposalId, direction, user.species, user.username);
             setUserVote(direction);
          }
       } catch (e) {
          console.error("Vote failed", e);
+         // Revert on failure
+         setUserVote(previousVote);
       } finally {
          setIsVoting(false);
       }
@@ -63,9 +101,9 @@ export const VoteControl: React.FC<VoteControlProps> = ({ proposalId, summary, i
       <div className="flex flex-col gap-2">
          {/* Visual Bar */}
          <div className="h-1.5 w-full bg-white/10 rounded-full flex overflow-hidden">
-            <div style={{ flex: Math.max(0, humanScore) }} className="bg-nova-pink shadow-[0_0_10px_var(--nova-pink)]"></div>
-            <div style={{ flex: Math.max(0, aiScore) }} className="bg-nova-acid shadow-[0_0_10px_var(--nova-acid)]"></div>
-            <div style={{ flex: Math.max(0, companyScore) }} className="bg-nova-purple shadow-[0_0_10px_var(--nova-purple)]"></div>
+            <div style={{ flex: Math.max(0, humanUp - humanDown) }} className="bg-nova-pink shadow-[0_0_10px_var(--nova-pink)]"></div>
+            <div style={{ flex: Math.max(0, aiUp - aiDown) }} className="bg-nova-acid shadow-[0_0_10px_var(--nova-acid)]"></div>
+            <div style={{ flex: Math.max(0, companyUp - companyDown) }} className="bg-nova-purple shadow-[0_0_10px_var(--nova-purple)]"></div>
          </div>
 
          <div className="flex items-center justify-between mt-1">
@@ -76,8 +114,8 @@ export const VoteControl: React.FC<VoteControlProps> = ({ proposalId, summary, i
                >
                   <ArrowBigUp size={24} className={userVote === 'up' ? 'fill-nova-acid' : ''} />
                </button>
-               <span className={`text-xl font-bold font-orbitron ${totalScore >= 0 ? 'text-white' : 'text-red-500'}`}>
-                  {totalScore}
+               <span className={`text-xl font-bold font-orbitron ${weightedScore >= 0 ? 'text-white' : 'text-red-500'}`} title="Weighted Harmony Score">
+                  {weightedScore}%
                </span>
                <button
                   onClick={() => handleVote('down')}
@@ -90,13 +128,13 @@ export const VoteControl: React.FC<VoteControlProps> = ({ proposalId, summary, i
             {/* Breakdown Species Icons */}
             <div className="flex gap-3 text-xs font-mono text-gray-500">
                <div className="flex items-center gap-1" title="Human Score">
-                  <Users size={12} className={humanScore > 0 ? "text-nova-pink" : ""} /> {humanScore}
+                  <Users size={12} className={humanUp > humanDown ? "text-nova-pink" : ""} /> {humanUp - humanDown}
                </div>
                <div className="flex items-center gap-1" title="AI Score">
-                  <Cpu size={12} className={aiScore > 0 ? "text-nova-acid" : ""} /> {aiScore}
+                  <Cpu size={12} className={aiUp > aiDown ? "text-nova-acid" : ""} /> {aiUp - aiDown}
                </div>
                <div className="flex items-center gap-1" title="Company Score">
-                  <Briefcase size={12} className={companyScore > 0 ? "text-nova-purple" : ""} /> {companyScore}
+                  <Briefcase size={12} className={companyUp > companyDown ? "text-nova-purple" : ""} /> {companyUp - companyDown}
                </div>
             </div>
          </div>

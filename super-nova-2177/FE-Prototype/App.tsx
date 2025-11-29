@@ -36,6 +36,8 @@ const MainLayout: React.FC = () => {
     const [selectedSpecies, setSelectedSpecies] = useState<'human' | 'ai' | 'company'>('human');
     const [isRegistering, setIsRegistering] = useState(false);
 
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     const fetchData = async () => {
         // Don't set full loading on refresh to avoid flickering, just initial load
         if (!metrics) setLoading(true);
@@ -182,27 +184,34 @@ const MainLayout: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#050505] to-black text-white pl-24 pr-6 py-6 font-sans">
-            <Sidebar />
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#050505] to-black text-white md:pl-24 p-4 py-6 font-sans">
+            <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
             <CreatePostModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
 
             <main className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
-                <div className="mb-8 flex justify-between items-end pb-4">
-                    <div>
-                        <h1 className="text-5xl font-orbitron font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                            SUPERNOVA<span className="text-nova-cyan">_2177</span>
-                        </h1>
-                        <div className="flex items-center gap-3 mt-2">
-                            <span className="text-gray-500 font-mono text-xs uppercase tracking-widest">Resonance Engine v5.0</span>
-                            <div className="h-px w-12 bg-gray-800"></div>
-                            <span className="text-nova-pink font-mono text-xs uppercase">
-                                {isOnline ? 'LIVE FEED' : 'SIMULATION MODE'}
-                            </span>
+                <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end pb-4 gap-4">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between">
+                        <div className="md:hidden">
+                            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div>
+                            <h1 className="text-3xl md:text-5xl font-orbitron font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                                SUPERNOVA<span className="text-nova-cyan">_2177</span>
+                            </h1>
+                            <div className="flex items-center gap-3 mt-2">
+                                <span className="text-gray-500 font-mono text-[10px] md:text-xs uppercase tracking-widest">Resonance Engine v5.0</span>
+                                <div className="h-px w-8 md:w-12 bg-gray-800"></div>
+                                <span className="text-nova-pink font-mono text-[10px] md:text-xs uppercase">
+                                    {isOnline ? 'LIVE FEED' : 'SIMULATION MODE'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-end">
                         <div className="flex flex-col items-end mr-4">
                             <div className={`text-xs font-mono flex items-center gap-2 ${isOnline ? 'text-nova-acid' : 'text-yellow-500'}`}>
                                 {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
@@ -231,7 +240,7 @@ const MainLayout: React.FC = () => {
                                     <VibeFeed nodes={vibeNodes} />
                                 </div>
                                 <div className="space-y-8">
-                                    <div className="glass-panel p-1 rounded-2xl">
+                                    <div className="glass-panel p-1 rounded-2xl hidden lg:block">
                                         <NetworkGraph data={graphData || { nodes: [], edges: [], metrics: { node_count: 0, edge_count: 0, density: 0 } }} />
                                     </div>
                                     <CosmicChat />

@@ -78,7 +78,23 @@ export const api = {
     });
 
     if (!response.ok) throw new Error('Login failed');
-    return await response.json();
+    const data = await response.json();
+
+    // Fetch user profile immediately to cache it
+    try {
+      const tempToken = data.access_token;
+      const userRes = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: { 'Authorization': `Bearer ${tempToken}` }
+      });
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        localStorage.setItem('user_data', JSON.stringify(userData));
+      }
+    } catch (e) {
+      console.warn("Failed to cache user data on login");
+    }
+
+    return data;
   },
 
   register: async (user: Partial<User> & { password: string }) => {
@@ -86,20 +102,36 @@ export const api = {
     console.log("Mocking registration for:", user);
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({
+        const newUser = {
           id: Date.now(),
           username: user.username || 'Traveler',
           species: user.species || 'human',
           harmony_score: '50',
           creative_spark: '50',
           network_centrality: 0
-        } as User);
+        } as User;
+
+        // Save to local storage to persist this "new user"
+        localStorage.setItem('user_data', JSON.stringify(newUser));
+
+        resolve(newUser);
       }, 500);
     });
   },
 
   getCurrentUser: async (): Promise<User> => {
-    return await fetchJson<User>('/users/me');
+    try {
+      const user = await fetchJson<User>('/users/me');
+      localStorage.setItem('user_data', JSON.stringify(user));
+      return user;
+    } catch (e) {
+      // Fallback to local storage if API fails (e.g. offline or mock user)
+      const stored = localStorage.getItem('user_data');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      throw e;
+    }
   },
 
   // Content
@@ -177,19 +209,20 @@ export const api = {
     return await fetchJson<Proposal[]>(url);
   },
 
-  voteProposal: async (proposalId: number, vote: 'up' | 'down', species: string) => {
+  voteProposal: async (proposalId: number, vote: 'up' | 'down', species: string, username: string) => {
     return await fetchJson<any>('/votes', {
       method: 'POST',
       body: JSON.stringify({
         proposal_id: proposalId,
         choice: vote,
-        species: species
+        voter_type: species,
+        username: username
       })
     });
   },
 
-  removeVote: async (proposalId: number) => {
-    return await fetchJson<any>(`/votes?proposal_id=${proposalId}`, {
+  removeVote: async (proposalId: number, username: string) => {
+    return await fetchJson<any>(`/votes?proposal_id=${proposalId}&username=${username}`, {
       method: 'DELETE'
     });
   },

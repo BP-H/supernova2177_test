@@ -10,3 +10,9 @@ export const MOCK_METRICS = {
     decoherenceRate: 0
 };
 export const INITIAL_GRAPH_DATA = { nodes: [], links: [] };
+
+export const SPECIES_WEIGHTS = {
+    human: 1.0,
+    ai: 1.0,
+    company: 1.0
+};
