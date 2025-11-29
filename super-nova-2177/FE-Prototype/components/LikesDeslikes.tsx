@@ -90,63 +90,10 @@ export const LikesDeslikes: React.FC<LikesDeslikesProps> = ({
             if (clicked === "like") {
                 setLikes(likes - 1);
             }
-            setDislikes(dislikes + 1);
-            setClicked("dislike");
-        }
-    };
-
-    return (
-        <>
-            <div className="flex text-black bg-white/10 shadow-md w-fit gap-2 rounded-full px-1 py-1 items-center justify-between backdrop-blur-sm border border-white/5">
-                <button
-                    onClick={handleLikeClick}
-                    style={{
-                        color: clicked === "like" ? "white" : "white",
-                        background: clicked === "like" ? "var(--nova-pink)" : "transparent",
-                        boxShadow: clicked === "like" ? "0 0 10px var(--nova-pink)" : "none",
-                    }}
-                    className={`flex items-center justify-center gap-1 rounded-full px-2 py-0 h-[30px] cursor-pointer transition-all hover:bg-white/10`}
-                >
-                    <ThumbsUp size={16} />
-                    <p className="h-fit font-bold">{likes}</p>
-                </button>
-                <button
-                    onClick={handleDislikeClick}
-                    style={{
-                        color: clicked === "dislike" ? "white" : "white",
-                        background: clicked === "dislike" ? "var(--nova-cyan)" : "transparent",
-                        boxShadow: clicked === "dislike" ? "0 0 10px var(--nova-cyan)" : "none",
-                    }}
-                    className={`flex items-center justify-center gap-1 rounded-full px-2 h-[30px] py-0 cursor-pointer transition-all hover:bg-white/10`}
-                >
-                    <ThumbsDown size={16} />
-                    <p className="h-fit font-bold">{dislikes}</p>
-                </button>
-                {action ? (
-                    <button
-                        onClick={() => setAction(false)}
-                        className="text-white rounded-full h-[30px] w-[30px] bg-white/10 flex items-center justify-center cursor-pointer hover:bg-white/20 transition-colors"
-                    >
-                        <X size={16} />
-                    </button>
                 ) : (
-                    <button
-                        onClick={() => setAction(true)}
-                        className="text-white rounded-full h-[30px] w-[30px] bg-white/10 flex items-center justify-center cursor-pointer hover:bg-white/20 transition-colors"
-                    >
-                        <ChevronUp size={16} />
-                    </button>
-                )}
-            </div>
-            <div className={`absolute ${className ? "-top-[-45px]" : "-top-55 md:-top-55 lg:-top-55 xl:-top-55"} left-0 right-0 z-50`}>
-                {action ? (
-                    <LikesInfo
-                        proposalId={proposalId}
-                    />
-                ) : (
-                    ""
-                )}
-            </div>
+    ""
+)}
+            </div >
         </>
     );
 };

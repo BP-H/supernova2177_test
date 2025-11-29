@@ -145,6 +145,16 @@ export const PostCard: React.FC<PostCardProps> = ({ item, type }) => {
                     <div>
                         <div className="font-bold text-white flex items-center gap-2">
                             {isProposal ? (proposal.userName || proposal.author_username || `User ${proposal.author_id}`) : vibe.author_username}
+                            {isProposal && proposal.author_type && (
+                                <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-widest text-white shadow-md ${proposal.author_type === 'human' ? 'bg-[#ff375f] shadow-[0_0_7px_#ff375f]' :
+                                            proposal.author_type === 'company' ? 'bg-[#7ec5f3] shadow-[0_0_7px_#3562c5]' :
+                                                proposal.author_type === 'ai' ? 'bg-[#7ec5f3] shadow-[0_0_7px_#ff375f]' : ''
+                                        }`}
+                                >
+                                    {proposal.author_type}
+                                </span>
+                            )}
                             {isProposal && (
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-widest ${proposal.status === 'active' ? 'bg-nova-acid/20 text-nova-acid' : 'bg-gray-700 text-gray-400'
                                     }`}>
